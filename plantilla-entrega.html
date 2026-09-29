@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrega UT01 CI CD y Docker</title>
+  <style>
+    :root { font-family: Arial, sans-serif; color: #182235; }
+    body { max-width: 980px; margin: 32px auto; padding: 0 20px; background: #f4f6fa; }
+    h1 { font-size: 26px; margin-bottom: 10px; }
+    p { line-height: 1.5; }
+    .formulario, .pagina { background: white; padding: 24px; margin: 20px 0; border-radius: 10px; }
+    label { display: block; margin: 15px 0; font-weight: bold; }
+    input { display: block; margin-top: 5px; width: 100%; box-sizing: border-box; padding: 9px; font: inherit; }
+    button { padding: 10px 16px; background: #1760a7; color: white; border: 0; border-radius: 5px; cursor: pointer; margin: 4px; }
+    .pagina h2 { font-size: 20px; }
+    .pagina img { max-width: 100%; max-height: 21cm; object-fit: contain; display: block; margin: 20px auto 0; }
+    .enlace { overflow-wrap: anywhere; }
+    .aviso { color: #9b1b1b; font-weight: bold; }
+    @page { size: A4; margin: 16mm; }
+    @media print {
+      body { max-width: none; margin: 0; padding: 0; background: white; }
+      .formulario { display: none; }
+      .pagina { padding: 0; margin: 0; border-radius: 0; break-after: page; page-break-after: always; }
+      .pagina:last-child { break-after: auto; page-break-after: auto; }
+      .pagina img { max-height: 23cm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="formulario">
+    <h1>Entrega UT01 · CI CD y Docker</h1>
+    <p>Selecciona tus capturas reales. Los datos solo se usan en esta página local para generar la vista previa imprimible.</p>
+    <label>Enlace al repositorio público de GitHub<input id="repo" type="url" placeholder="https://github.com/tu-usuario/mi-web-cicd" required></label>
+    <label>Captura de GitHub Actions con los dos trabajos verdes<input id="actions" type="file" accept="image/*"></label>
+    <label>Captura de docker ps con el contenedor activo<input id="docker" type="file" accept="image/*"></label>
+    <label>Captura de http://localhost:8080 con el JSON<input id="browser" type="file" accept="image/*"></label>
+    <button id="preparar" type="button">Preparar vista previa</button>
+    <button id="imprimir" type="button" disabled>Imprimir o guardar PDF</button>
+    <p id="estado" class="aviso" role="status"></p>
+  </div>
+
+  <section class="pagina">
+    <h1>Práctica UT01 · Despliegue automatizado con CI CD y Docker</h1>
+    <p><strong>Repositorio público:</strong> <a id="enlace" class="enlace"></a></p>
+    <h2>1 · GitHub Actions</h2>
+    <p>La ejecución muestra las pruebas y la construcción de la imagen en verde.</p>
+    <img id="vista-actions" alt="Captura de la ejecución de GitHub Actions">
+  </section>
+  <section class="pagina">
+    <h2>2 · Contenedor Docker en ejecución</h2>
+    <p>Salida del comando docker ps con el contenedor app-produccion activo.</p>
+    <img id="vista-docker" alt="Captura de docker ps">
+  </section>
+  <section class="pagina">
+    <h2>3 · Respuesta JSON en el navegador</h2>
+    <p>Navegador abierto en http://localhost:8080.</p>
+    <img id="vista-browser" alt="Captura de localhost:8080 con la respuesta JSON">
+  </section>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const urls = [];
+    $('preparar').addEventListener('click', async () => {
+      const repo = $('repo').value.trim();
+      const files = ['actions', 'docker', 'browser'].map((id) => $(id).files[0]);
+      if (!/^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/?$/.test(repo) || files.some((file) => !file || !file.type.startsWith('image/'))) {
+        $('estado').textContent = 'Introduce la URL completa del repositorio y selecciona las tres imágenes.';
+        $('imprimir').disabled = true;
+        return;
+      }
+      urls.forEach(URL.revokeObjectURL);
+      urls.length = 0;
+      const enlace = $('enlace');
+      enlace.textContent = repo;
+      enlace.href = repo;
+      for (let i = 0; i < files.length; i++) {
+        const url = URL.createObjectURL(files[i]);
+        urls.push(url);
+        const img = $(`vista-${['actions', 'docker', 'browser'][i]}`);
+        img.src = url;
+        try { await img.decode(); } catch {
+          $('estado').textContent = 'No se pudo leer una de las imágenes. Selecciona otra captura.';
+          $('imprimir').disabled = true;
+          return;
+        }
+      }
+      $('estado').textContent = 'Vista previa preparada. Comprueba las tres capturas antes de guardar el PDF.';
+      $('imprimir').disabled = false;
+    });
+    $('imprimir').addEventListener('click', () => window.print());
+  </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+name: Integracion y Despliegue Continuo (CI/CD)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    name: Ejecutar Tests Unitarios
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Lanzar pruebas unitarias
+        run: npm test
+
+  construir_docker:
+    name: Construccion de Imagen Docker
+    needs: pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar codigo
+        uses: actions/checkout@v4
+      - name: Construir la imagen Docker de la aplicacion
+        run: docker build -t mi-web-node:latest .

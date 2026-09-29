@@ -1,0 +1,7 @@
+.git
+.github
+node_modules
+npm-debug.log
+test.js
+README.md
+plantilla-entrega.html
